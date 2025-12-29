@@ -1,0 +1,6 @@
+.idea
+*.log
+*.bak
+*.*_bak
+vendor
+/compose.override.yml
