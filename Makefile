@@ -9,6 +9,7 @@ setup:
 	$(DOCKER_COMPOSE) build --pull --no-cache
 	$(MAKE) up
 	$(MAKE) cp c="install"
+	$(EXEC_PHP) bash -c "cd ../tools && composer install"
 	$(MAKE) lm
 
 cleanup: cln
@@ -55,10 +56,10 @@ l:
 qa: cf phpstan tt
 
 cf:
-	$(EXEC_PHP) vendor/bin/php-cs-fixer fix
+	$(EXEC_PHP) ../tools/vendor/bin/php-cs-fixer fix
 
 phpstan:
-	$(EXEC_PHP) vendor/bin/phpstan analyze src tests
+	$(EXEC_PHP) ../tools/vendor/bin/phpstan analyze src tests
 
 quality-all: qa
 

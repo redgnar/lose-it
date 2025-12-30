@@ -6,3 +6,4 @@ vendor
 /docker-compose.override.yml
 /app/.editorconfig
 /app/.env
+/app/.php-cs-fixer.cache
