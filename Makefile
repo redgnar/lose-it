@@ -28,7 +28,6 @@ setup:
 	${DOCKER_EXEC} bin/console doctrine:database:drop --if-exists --no-interaction --force --env=test
 	${DOCKER_EXEC} bin/console doctrine:database:create --if-not-exists --no-interaction --env=test
 	${DOCKER_EXEC} bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=test
-	$(MAKE) lm
 
 cleanup: cln
 
@@ -63,9 +62,6 @@ tf:
 
 tff:
 	$(DOCKER_EXEC) vendor/bin/phpunit --stop-on-failure
-
-lm:
-	$(DOCKER_EXEC) php bin/console hautelook:fixtures:load -n || true
 
 l:
 	$(DOCKER_COMPOSE) logs -f $(c)
