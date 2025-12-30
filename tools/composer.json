@@ -1,0 +1,14 @@
+{
+    "name": "lose-it/tools",
+    "description": "Development tools for Lose-it project",
+    "type": "project",
+    "require-dev": {
+        "phpstan/phpstan": "^2.0",
+        "friendsofphp/php-cs-fixer": "^3.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/flex": true
+        }
+    }
+}

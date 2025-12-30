@@ -1,0 +1,89 @@
+{
+    "name": "redgnar/lose-it",
+    "type": "project",
+    "description": "Lose It! is an MVP application designed for individuals seeking to lose weight by simplifying the process of adapting cooking recipes to their specific dietary needs and calorie goals. The application leverages AI to modify user-provided recipes, focusing on two primary functions: deterministic portion scaling and AI-driven calorie reduction. The goal is to provide a fast, reliable way to tailor recipes while preserving the core flavor and cooking methods of the original dish.",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.4",
+        "ext-ctype": "*",
+        "ext-iconv": "*",
+        "symfony/console": "8.0.*",
+        "symfony/dotenv": "8.0.*",
+        "symfony/flex": "^2",
+        "symfony/framework-bundle": "8.0.*",
+        "symfony/property-access": "8.0.*",
+        "symfony/runtime": "8.0.*",
+        "symfony/yaml": "8.0.*"
+    },
+    "require-dev": {
+        "doctrine/doctrine-bundle": "*",
+        "doctrine/migrations": "*",
+        "doctrine/orm": "*",
+        "friendsofphp/php-cs-fixer": "^3.92",
+        "knpuniversity/oauth2-client-bundle": "*",
+        "league/oauth2-google": "*",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^12.5",
+        "symfony/browser-kit": "8.0.*",
+        "symfony/css-selector": "8.0.*",
+        "symfony/maker-bundle": "*",
+        "symfony/security-bundle": "8.0.*",
+        "symfony/stimulus-bundle": "*",
+        "symfony/twig-bundle": "8.0.*",
+        "symfony/ux-twig-component": "*",
+        "zenstruck/foundry": "^2.8"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "symfony/flex": true,
+            "symfony/runtime": true
+        },
+        "bump-after-update": true,
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "replace": {
+        "symfony/polyfill-ctype": "*",
+        "symfony/polyfill-iconv": "*",
+        "symfony/polyfill-php72": "*",
+        "symfony/polyfill-php73": "*",
+        "symfony/polyfill-php74": "*",
+        "symfony/polyfill-php80": "*",
+        "symfony/polyfill-php81": "*",
+        "symfony/polyfill-php82": "*",
+        "symfony/polyfill-php83": "*",
+        "symfony/polyfill-php84": "*"
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+        },
+        "post-install-cmd": [
+            "@auto-scripts"
+        ],
+        "post-update-cmd": [
+            "@auto-scripts"
+        ]
+    },
+    "conflict": {
+        "symfony/symfony": "*"
+    },
+    "extra": {
+        "symfony": {
+            "allow-contrib": false,
+            "require": "8.0.*"
+        }
+    }
+}

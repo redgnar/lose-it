@@ -3,4 +3,6 @@
 *.bak
 *.*_bak
 vendor
-/compose.override.yml
+/docker-compose.override.yml
+/app/.editorconfig
+/app/.env
