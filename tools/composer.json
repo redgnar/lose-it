@@ -4,7 +4,8 @@
     "type": "project",
     "require-dev": {
         "phpstan/phpstan": "^2.0",
-        "friendsofphp/php-cs-fixer": "^3.0"
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "phpat/phpat": "^0.12.1"
     },
     "config": {
         "vendor-dir": "vendor",

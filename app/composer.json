@@ -9,6 +9,7 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "doctrine/doctrine-bundle": ">=3.2.2",
+        "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/migrations": ">=3.9.5",
         "doctrine/orm": ">=3.6",
         "knpuniversity/oauth2-client-bundle": ">=2.20.1",

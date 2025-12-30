@@ -1,3 +1,6 @@
+includes:
+    - ../tools/vendor/phpat/phpat/extension.neon
+
 parameters:
     level: max
     paths:
@@ -10,18 +13,10 @@ parameters:
             path: tests/bootstrap.php
         -
             message: '#Class [a-zA-Z0-9\\_]+ should be written with ::class notation, string found.#'
-            path: tests/architecture
+            path: tests/Architecture
 
 services:
-#    -
-#        class: App\Tests\Architecture\DoctrineAT
-#        tags:
-#            - phpat.test
-#    -
-#        class: App\Tests\Architecture\MessengerAT
-#        tags:
-#            - phpat.test
-#    -
-#        class: App\Tests\Architecture\LayersAT
-#        tags:
-#            - phpat.test
+    -
+        class: App\Tests\Architecture\BasicArchitectureTest
+        tags:
+            - phpat.test

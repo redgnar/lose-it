@@ -1,15 +1,33 @@
-DOCKER_COMPOSE = docker compose
-PHP_CONT = php
-EXEC_PHP = $(DOCKER_COMPOSE) exec $(PHP_CONT)
+BASE_DIR ?= $(CURDIR)
+PHP_CONTAINER ?= php
+
+DOCKER_COMPOSE_FLAGS =
+DOCKER_EXEC_FLAGS = -it
+
+DOCKER_COMPOSE = export BASE_DIR=$(BASE_DIR) && docker compose $(DOCKER_COMPOSE_FLAGS)
+DOCKER_EXEC    = docker compose exec $(DOCKER_EXEC_FLAGS) $(PHP_CONTAINER)
+DOCKER_CP      = docker compose cp $(PHP_CONTAINER)
 
 .PHONY: setup cleanup cln up down tt tc tu ta ti tf tff lm l qa cf phpstan migrations-diff migrations-migrate migrations-down lf ia sc cp doc ug
 
 # Setup & Cleanup
 setup:
-	$(DOCKER_COMPOSE) build --pull --no-cache
+	$(DOCKER_COMPOSE) down -v
+	$(DOCKER_COMPOSE) build --pull
 	$(MAKE) up
-	$(MAKE) cp c="install"
-	$(EXEC_PHP) bash -c "cd ../tools && composer install"
+	${DOCKER_EXEC} composer install
+	${DOCKER_EXEC} composer install --working-dir=../tools
+	${DOCKER_EXEC} bin/console cache:warmup
+	${DOCKER_EXEC} bin/console cache:warmup --env=test
+
+	${DOCKER_EXEC} bin/console doctrine:database:drop --if-exists --no-interaction --force
+	${DOCKER_EXEC} bin/console doctrine:database:create --if-not-exists --no-interaction
+	${DOCKER_EXEC} bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+#	${DOCKER_EXEC} bin/console doctrine:fixtures:load --no-interaction
+
+	${DOCKER_EXEC} bin/console doctrine:database:drop --if-exists --no-interaction --force --env=test
+	${DOCKER_EXEC} bin/console doctrine:database:create --if-not-exists --no-interaction --env=test
+	${DOCKER_EXEC} bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=test
 	$(MAKE) lm
 
 cleanup: cln
@@ -26,28 +44,28 @@ down:
 
 # Testing
 tt:
-	$(EXEC_PHP) vendor/bin/phpunit
+	$(DOCKER_EXEC) vendor/bin/phpunit
 
 tc:
-	$(EXEC_PHP) vendor/bin/phpunit --coverage-clover coverage.xml --coverage-html coverage
+	$(DOCKER_EXEC) vendor/bin/phpunit --coverage-clover coverage.xml --coverage-html coverage
 
 tu:
-	$(EXEC_PHP) vendor/bin/phpunit --testsuite Unit
+	$(DOCKER_EXEC) vendor/bin/phpunit --testsuite Unit
 
 ta:
-	$(EXEC_PHP) vendor/bin/phpunit --testsuite Api
+	$(DOCKER_EXEC) vendor/bin/phpunit --testsuite Api
 
 ti:
-	$(EXEC_PHP) vendor/bin/phpunit --testsuite Integration
+	$(DOCKER_EXEC) vendor/bin/phpunit --testsuite Integration
 
 tf:
-	$(EXEC_PHP) vendor/bin/phpunit --testsuite Functional
+	$(DOCKER_EXEC) vendor/bin/phpunit --testsuite Functional
 
 tff:
-	$(EXEC_PHP) vendor/bin/phpunit --stop-on-failure
+	$(DOCKER_EXEC) vendor/bin/phpunit --stop-on-failure
 
 lm:
-	$(EXEC_PHP) php bin/console hautelook:fixtures:load -n || true
+	$(DOCKER_EXEC) php bin/console hautelook:fixtures:load -n || true
 
 l:
 	$(DOCKER_COMPOSE) logs -f $(c)
@@ -56,38 +74,38 @@ l:
 qa: cf phpstan tt
 
 cf:
-	$(EXEC_PHP) ../tools/vendor/bin/php-cs-fixer fix
+	$(DOCKER_EXEC) ../tools/vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php
 
 phpstan:
-	$(EXEC_PHP) ../tools/vendor/bin/phpstan analyze src tests
+	$(DOCKER_EXEC) ../tools/vendor/bin/phpstan analyze --memory-limit=1G
 
 quality-all: qa
 
 # Database
 migrations-diff:
-	$(EXEC_PHP) php bin/console doctrine:migrations:diff
+	$(DOCKER_EXEC) php bin/console doctrine:migrations:diff
 
 migrations-migrate:
-	$(EXEC_PHP) php bin/console doctrine:migrations:migrate -n
+	$(DOCKER_EXEC) php bin/console doctrine:migrations:migrate -n
 
 migrations-down:
-	$(EXEC_PHP) php bin/console doctrine:migrations:execute --down
+	$(DOCKER_EXEC) php bin/console doctrine:migrations:execute --down
 
 lf:
-	$(EXEC_PHP) php bin/console doctrine:fixtures:load -n
+	$(DOCKER_EXEC) php bin/console doctrine:fixtures:load -n
 
 # Development Tools
 ia:
 	$(DOCKER_COMPOSE) exec $(PHP_CONT) /bin/bash
 
 sc:
-	$(EXEC_PHP) php bin/console $(c)
+	$(DOCKER_EXEC) php bin/console $(c)
 
 cp:
-	$(EXEC_PHP) composer $(c)
+	$(DOCKER_EXEC) composer $(c)
 
 doc:
-	$(EXEC_PHP) php bin/console nelmio:apidoc:dump
+	$(DOCKER_EXEC) php bin/console nelmio:apidoc:dump
 
 # Additional Shortcuts
 dc:
