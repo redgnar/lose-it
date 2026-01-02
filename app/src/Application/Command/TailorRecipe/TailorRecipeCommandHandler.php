@@ -21,6 +21,13 @@ final readonly class TailorRecipeCommandHandler
 
     public function __invoke(TailorRecipeCommand $command): void
     {
-        // TODO: Implement logic from plan
+        $this->quotaService->checkAndIncrementQuota($command->recipeId);
+
+        // Logic will be implemented in next steps
+        echo count([
+            $this->tailoringService,
+            $this->scalingService,
+            $this->aiReductionService,
+        ]);
     }
 }
