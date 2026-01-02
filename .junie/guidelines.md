@@ -37,6 +37,8 @@ You are Junie (JetBrains AI coding agent). Follow these rules for EVERY task.
 - `app/src/Application` - Application layer
 - `app/src/Infrastructure` - Infrastructure layer
 - `app/src/Ux` - Ux layer
+- `app/src/Ux/Cli` - Cli ux parts
+- `app/src/Ux/Http` - Http ux parts
 - `app/tests/` - Test suites (functional, integration, unit, api)
 - `app/config/` - Configuration files
 - `docker/` - Docker configuration and scripts
@@ -52,6 +54,8 @@ You are Junie (JetBrains AI coding agent). Follow these rules for EVERY task.
   - contain business rules
   - build complex Doctrine queries
   - flush EntityManager directly unless the project already does it that way and it's consistent
+- All Controllers Input and Output must be DTOs.
+- Keep controller and DTOs files in the same UseCase directory, keep general DTOs used across multiple UseCases in a common Dto directory
 
 ### Services
 - Prefer constructor injection.
