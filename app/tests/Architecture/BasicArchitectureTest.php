@@ -50,6 +50,8 @@ final class BasicArchitectureTest
                 Selector::inNamespace('Webmozart\Assert'),
                 Selector::inNamespace('Doctrine'),
                 Selector::inNamespace('Symfony'),
+                Selector::classname('DateTimeImmutable'),
+                Selector::classname('DateTimeInterface'),
             );
     }
 

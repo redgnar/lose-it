@@ -63,7 +63,7 @@ You are Junie (JetBrains AI coding agent). Follow these rules for EVERY task.
 - Keep templates display-only (loops/conditions for rendering are fine).
 
 ## Doctrine ORM 3 rules
-- Doctrine resides in the Infrastructure layer. No Domain/Application layer should know anything about Doctrine.
+- Doctrine resides in the Infrastructure layer Infrastructure/Doctrine. No Domain/Application layer should know anything about Doctrine.
 - Entities:
   - typed properties
   - invariants enforced via methods (no "setEverything")
