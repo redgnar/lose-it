@@ -17,6 +17,7 @@ final class BasicArchitectureTest
             ->canOnlyDependOn()
             ->classes(
                 Selector::inNamespace('App\Application'),
+                Selector::inNamespace('App\Domain'),
                 Selector::inNamespace('Webmozart\Assert'),
                 Selector::inNamespace('Symfony\Component\Uid'),
                 Selector::classname('Psr\Log\LoggerInterface'),
@@ -30,7 +31,7 @@ final class BasicArchitectureTest
             ->canOnlyDependOn()
             ->classes(
                 Selector::inNamespace('App\Infrastructure'),
-                Selector::classname('/^App\\\Application\\\(Storage|Notifier)\\\(Command|Query|Service)\\\.+Interface$/', true),
+                Selector::classname('/^App\\\Application\\\(Storage|Notifier|Contract)\\\(Command|Query|Service|).+Interface$/', true),
                 Selector::classname('/^App\\\Application\\\Exception\\\.+(Exception|Interface)$/', true),
                 Selector::classname('/^App\\\Application\\\Bus\\\Command\\\.+Interface$/', true),
                 Selector::classname('/^App\\\Application\\\UseCases\\\.+\\\.+(?<!Service|Handler)$/', true),

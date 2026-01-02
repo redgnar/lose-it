@@ -61,6 +61,7 @@ You are Junie (JetBrains AI coding agent). Follow these rules for EVERY task.
 - Prefer constructor injection.
 - Keep services stateless.
 - Prefer small, composable services over a "God service".
+- Expose interfaces for Port-Adapter pattern. Services should not depend on services from other layers. Ux could depend on Infrastructure. Infrastructure could depend on Application. Application could depend on Domain.
 
 ### Templates (Twig)
 - No business logic in Twig.
