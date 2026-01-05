@@ -93,6 +93,7 @@ You are Junie (JetBrains AI coding agent). Follow these rules for EVERY task.
 - Prefer readonly DTOs for request/response data objects.
 - Use PHP attributes as used in the project (routing/ORM/validation).
 - No new magic, no clever metaprogramming.
+- Do not to use arrays in Parameters, Try to dedicated Collection Objects, use arrays only in Ux/Dtos
 
 ## Testing & quality gates (always run when code changes)
 All tests should follow GIVEN/WHEN/THEN pattern

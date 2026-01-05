@@ -18,4 +18,12 @@ enum Servings: int
     case S10 = 10;
     case S11 = 11;
     case S12 = 12;
+
+    /**
+     * @return int[]
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
+    }
 }

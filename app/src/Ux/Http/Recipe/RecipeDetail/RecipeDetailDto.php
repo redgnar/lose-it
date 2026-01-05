@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Ux\Http\Recipe\RecipeDetail;
 
 use App\Application\Dto\RecipeIngredientDto;
+use App\Domain\Enum\Servings;
 
 final readonly class RecipeDetailDto
 {
@@ -17,7 +18,7 @@ final readonly class RecipeDetailDto
         public string $title,
         public bool $isFavorite,
         public string $versionId,
-        public int $servings,
+        public Servings $servings,
         public array $ingredients,
         public array $steps,
         public ?int $totalCalories,

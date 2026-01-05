@@ -13,6 +13,7 @@ final readonly class TailorRecipeCommand implements SyncCommandInterface
 {
     public function __construct(
         public string $recipeId,
+        public string $userId,
         public Servings $targetServings,
         public Aggressiveness $aggressiveness,
         public bool $keepSimilar,

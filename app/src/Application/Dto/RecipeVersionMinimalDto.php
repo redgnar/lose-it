@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Ux\Http\Recipe;
+namespace App\Application\Dto;
 
-use App\Application\Dto\RecipeIngredientDto;
+use App\Domain\Enum\Servings;
 
 final readonly class RecipeVersionMinimalDto
 {
@@ -13,7 +13,7 @@ final readonly class RecipeVersionMinimalDto
      */
     public function __construct(
         public string $id,
-        public int $servings,
+        public Servings $servings,
         public array $ingredients,
     ) {
     }

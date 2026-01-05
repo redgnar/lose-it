@@ -4,61 +4,69 @@ declare(strict_types=1);
 
 namespace App\Domain\Service;
 
+use App\Domain\Contract\MeasurementKeywordsProviderInterface;
 use App\Domain\Contract\ScalingServiceInterface;
 use App\Domain\Enum\Servings;
-use App\Infrastructure\Doctrine\Entity\RecipeIngredient;
-use App\Infrastructure\Doctrine\Entity\RecipeVersion;
+use App\Domain\Model\RecipeIngredient;
+use App\Domain\Model\RecipeVersion;
+use App\Domain\ValueObject\MeasurementKeywords;
+use App\Domain\ValueObject\RecipeIngredientCollection;
+use App\Domain\ValueObject\RecipeStepCollection;
 use Symfony\Component\Uid\Uuid;
 
 final class ScalingService implements ScalingServiceInterface
 {
+    public function __construct(private MeasurementKeywordsProviderInterface $keywordsProvider)
+    {
+    }
+
     public function scale(RecipeVersion $sourceVersion, Servings $targetServings): RecipeVersion
     {
-        $ratio = $targetServings->value / $sourceVersion->getServings();
+        $ratio = $targetServings->value / $sourceVersion->servings->value;
+        $keywords = $this->keywordsProvider->getKeywords();
 
-        $scaledVersion = new RecipeVersion(
-            Uuid::v7(),
-            $sourceVersion->getRecipe(),
-            $targetServings->value,
-            'scale'
-        );
-        $scaledVersion->setParentVersion($sourceVersion);
+        $scaledIngredients = [];
+        foreach ($sourceVersion->ingredients as $sourceIngredient) {
+            $newQuantity = $sourceIngredient->quantity;
+            $newOriginalText = $sourceIngredient->originalText;
 
-        foreach ($sourceVersion->getIngredients() as $sourceIngredient) {
-            $scaledIngredient = new RecipeIngredient($scaledVersion, $sourceIngredient->getOriginalText());
-            $scaledIngredient->setIngredient($sourceIngredient->getIngredient());
-            $scaledIngredient->setUnit($sourceIngredient->getUnit());
-            $scaledIngredient->setIsParsed($sourceIngredient->isParsed());
-            $scaledIngredient->setIsScalable($sourceIngredient->isScalable());
+            if ($sourceIngredient->isScalable && null !== $sourceIngredient->quantity) {
+                $scaledQuantity = (float) $sourceIngredient->quantity * $ratio;
+                $newQuantity = (string) $scaledQuantity;
 
-            if ($sourceIngredient->isScalable() && null !== $sourceIngredient->getQuantity()) {
-                $newQuantity = (float) $sourceIngredient->getQuantity() * $ratio;
-                $scaledIngredient->setQuantity((string) $newQuantity);
-
-                // Update original text if it was parsed
-                if ($sourceIngredient->isParsed()) {
-                    $scaledIngredient->setOriginalText($this->updateQuantityInText(
-                        $sourceIngredient->getOriginalText(),
-                        (float) $sourceIngredient->getQuantity(),
-                        $newQuantity
-                    ));
+                if ($sourceIngredient->isParsed) {
+                    $newOriginalText = $this->updateQuantityInText(
+                        $sourceIngredient->originalText,
+                        (float) $sourceIngredient->quantity,
+                        $scaledQuantity
+                    );
                 }
-            } else {
-                $scaledIngredient->setQuantity($sourceIngredient->getQuantity());
             }
 
-            $scaledVersion->getIngredients()->add($scaledIngredient);
+            $scaledIngredients[] = new RecipeIngredient(
+                $newOriginalText,
+                $newQuantity,
+                $sourceIngredient->isParsed,
+                $sourceIngredient->isScalable,
+                $sourceIngredient->ingredientId,
+                $sourceIngredient->unitId
+            );
         }
 
-        $scaledVersion->setSteps($this->scaleSteps($sourceVersion->getSteps(), $ratio));
-
-        // Calories are also scaled
-        if (null !== $sourceVersion->getTotalCalories()) {
-            $scaledVersion->setTotalCalories((int) round($sourceVersion->getTotalCalories() * $ratio));
+        $newTotalCalories = null;
+        if (null !== $sourceVersion->totalCalories) {
+            $newTotalCalories = (int) round($sourceVersion->totalCalories * $ratio);
         }
-        $scaledVersion->setCaloriesPerServing($sourceVersion->getCaloriesPerServing());
 
-        return $scaledVersion;
+        return new RecipeVersion(
+            Uuid::v7(),
+            $sourceVersion->recipeId,
+            $targetServings,
+            new RecipeIngredientCollection(...$scaledIngredients),
+            new RecipeStepCollection(...$this->scaleSteps($sourceVersion->steps, $ratio, $keywords)),
+            $newTotalCalories,
+            $sourceVersion->caloriesPerServing
+        );
     }
 
     private function updateQuantityInText(string $text, float $oldQty, float $newQty): string
@@ -70,18 +78,16 @@ final class ScalingService implements ScalingServiceInterface
     }
 
     /**
-     * @param array<mixed> $steps
-     *
      * @return array<mixed>
      */
-    private function scaleSteps(array $steps, float $ratio): array
+    private function scaleSteps(RecipeStepCollection $steps, float $ratio, MeasurementKeywords $keywords): array
     {
         $scaledSteps = [];
         foreach ($steps as $step) {
             if (is_string($step)) {
-                $scaledSteps[] = $this->scaleText($step, $ratio);
+                $scaledSteps[] = $this->scaleText($step, $ratio, $keywords);
             } elseif (is_array($step) && isset($step['instruction']) && is_string($step['instruction'])) {
-                $step['instruction'] = $this->scaleText($step['instruction'], $ratio);
+                $step['instruction'] = $this->scaleText($step['instruction'], $ratio, $keywords);
                 $scaledSteps[] = $step;
             } else {
                 $scaledSteps[] = $step;
@@ -91,16 +97,52 @@ final class ScalingService implements ScalingServiceInterface
         return $scaledSteps;
     }
 
-    private function scaleText(string $text, float $ratio): string
+    private function scaleText(string $text, float $ratio, MeasurementKeywords $keywords): string
     {
-        // Regex to find numbers. This is a simplified version.
-        $result = preg_replace_callback('/(\d+(?:\.\d+)?)/', function ($matches) use ($ratio) {
+        // Regex to find numbers, and check for following unit or punctuation
+        $result = preg_replace_callback('/(\d+(?:\.\d+)?)(?:\s*([a-zA-Z%]+))?/', function ($matches) use ($ratio, $text, $keywords) {
             $number = (float) $matches[1];
-            // We only scale numbers if they look like quantities (heuristic)
-            // For now, let's scale all numbers found in steps as per plan "uses regex to update numeric values in the steps"
-            $scaled = $number * $ratio;
+            $unit = isset($matches[2]) ? strtolower($matches[2]) : '';
+            $fullMatch = $matches[0];
 
-            return (string) round($scaled, 2);
+            if (in_array($unit, $keywords->excludedUnits, true)) {
+                return $fullMatch;
+            }
+
+            // 2. Exclude Step numbering (e.g., "Step 1", "1.")
+            // Look behind in the original text to see if it's preceded by any step prefix
+            // Or look ahead to see if it's followed by ":" or "."
+            $offset = strpos($text, $fullMatch);
+            if (false !== $offset) {
+                foreach ($keywords->stepPrefixes as $prefix) {
+                    $prefixLen = strlen($prefix);
+                    $actualPrefix = substr($text, max(0, $offset - ($prefixLen + 1)), $prefixLen + 1);
+                    if (false !== stripos($actualPrefix, $prefix)) {
+                        return $fullMatch;
+                    }
+                }
+
+                $suffix = substr($text, $offset + strlen($fullMatch), 1);
+                if ('.' === $suffix || ':' === $suffix) {
+                    // Check if it's at the start of the line or preceded by space
+                    $charBefore = $offset > 0 ? $text[$offset - 1] : "\n";
+                    if ("\n" === $charBefore || ' ' === $charBefore) {
+                        return $fullMatch;
+                    }
+                }
+            }
+
+            $scaled = $number * $ratio;
+            $scaledStr = (string) round($scaled, 2);
+
+            // Reconstruct with original spacing
+            if (isset($matches[2])) {
+                // If there was a unit, we should preserve whether there was a space or not
+                // matches[0] contains the full match including possible spaces before unit
+                return str_replace($matches[1], $scaledStr, $fullMatch);
+            }
+
+            return $scaledStr;
         }, $text);
 
         return $result ?? $text;

@@ -1,0 +1,242 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Lose It API",
+        "description": "Lose It API for recipe tailoring and management.",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/recipes/{id}/tailor": {
+            "post": {
+                "tags": [
+                    "Recipe"
+                ],
+                "summary": "Tailor a recipe",
+                "description": "Tailor a recipe based on target servings and aggressiveness.",
+                "operationId": "post_api_recipe_tailor",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The recipe ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TailorRecipeCommandDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Recipe tailored successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TailorResultDto"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "Recipe not found"
+                    },
+                    "422": {
+                        "description": "Unprocessable entity"
+                    },
+                    "429": {
+                        "description": "Quota exceeded"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "TailorRecipeCommandDto": {
+                "required": [
+                    "target_servings",
+                    "aggressiveness",
+                    "keep_similar",
+                    "save_strategy"
+                ],
+                "properties": {
+                    "target_servings": {
+                        "description": "Target servings for the tailored recipe",
+                        "type": "integer",
+                        "enum": [
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6,
+                            7,
+                            8,
+                            9,
+                            10,
+                            11,
+                            12
+                        ],
+                        "example": 4
+                    },
+                    "aggressiveness": {
+                        "description": "Aggressiveness level for the tailoring",
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ],
+                        "example": "medium"
+                    },
+                    "keep_similar": {
+                        "description": "Whether to keep ingredients similar to original",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "save_strategy": {
+                        "description": "Strategy for saving the tailored recipe",
+                        "type": "string",
+                        "enum": [
+                            "overwrite",
+                            "new_version"
+                        ],
+                        "example": "new_version"
+                    }
+                },
+                "type": "object"
+            },
+            "RecipeIngredientDto": {
+                "required": [
+                    "originalText",
+                    "isParsed"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "ID of the ingredient",
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "018f3b4a-1234-7890-abcd-1234567890ab",
+                        "nullable": true
+                    },
+                    "originalText": {
+                        "description": "Original text of the ingredient",
+                        "type": "string",
+                        "example": "200g of chicken breast"
+                    },
+                    "quantity": {
+                        "description": "Parsed quantity",
+                        "type": "string",
+                        "example": "200",
+                        "nullable": true
+                    },
+                    "unit": {
+                        "description": "Parsed unit",
+                        "type": "string",
+                        "example": "g",
+                        "nullable": true
+                    },
+                    "item": {
+                        "description": "Parsed item name",
+                        "type": "string",
+                        "example": "chicken breast",
+                        "nullable": true
+                    },
+                    "isParsed": {
+                        "description": "Whether the ingredient was successfully parsed",
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "RecipeVersionMinimalDto": {
+                "required": [
+                    "id",
+                    "servings",
+                    "ingredients"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "ID of the recipe version",
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "018f3b4a-1234-7890-abcd-1234567890ab"
+                    },
+                    "servings": {
+                        "description": "Number of servings",
+                        "type": "integer",
+                        "example": 4
+                    },
+                    "ingredients": {
+                        "description": "List of ingredients",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RecipeIngredientDto"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "TailorResultDto": {
+                "required": [
+                    "scaledVersion",
+                    "finalVersion",
+                    "status"
+                ],
+                "properties": {
+                    "scaledVersion": {
+                        "$ref": "#/components/schemas/RecipeVersionMinimalDto"
+                    },
+                    "finalVersion": {
+                        "$ref": "#/components/schemas/RecipeVersionMinimalDto"
+                    },
+                    "status": {
+                        "description": "Status of the tailoring process",
+                        "type": "string",
+                        "example": "success"
+                    },
+                    "message": {
+                        "description": "Optional message from the tailoring process",
+                        "type": "string",
+                        "default": null,
+                        "example": "Recipe tailored successfully",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "Bearer": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "security": [
+        {
+            "Bearer": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Recipe",
+            "description": "Recipe"
+        }
+    ]
+}

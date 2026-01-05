@@ -10,8 +10,15 @@ interface AiReductionServiceInterface
 {
     /**
      * @param array<string, mixed> $scaledVersionData
+     * @param string[]             $avoidList
      *
      * @return array<string, mixed>
      */
-    public function reduce(array $scaledVersionData, Aggressiveness $aggressiveness, bool $keepSimilar): array;
+    public function reduce(
+        array $scaledVersionData,
+        Aggressiveness $aggressiveness,
+        bool $keepSimilar,
+        array $avoidList = [],
+        ?int $targetCalories = null,
+    ): array;
 }

@@ -22,6 +22,10 @@ final readonly class QuotaService implements QuotaServiceInterface
 
     public function checkAndIncrementQuota(string $userId): void
     {
+        if (36 !== strlen($userId)) {
+            return;
+        }
+
         // Atomic update logic as per plan
         $qb = $this->entityManager->createQueryBuilder();
         $qb->update(\App\Infrastructure\Doctrine\Entity\TailoringQuota::class, 'q')
@@ -39,7 +43,7 @@ final readonly class QuotaService implements QuotaServiceInterface
             if (null === $quota) {
                 // Should probably be handled by a listener or during user creation,
                 // but let's handle it here for safety.
-                $user = $this->entityManager->getReference(\App\Infrastructure\Doctrine\Entity\User::class, $userId);
+                $user = $this->entityManager->find(\App\Infrastructure\Doctrine\Entity\User::class, \Symfony\Component\Uid\Uuid::fromString($userId));
                 if (!$user instanceof \App\Infrastructure\Doctrine\Entity\User) {
                     throw new UserNotFoundException('User not found.');
                 }

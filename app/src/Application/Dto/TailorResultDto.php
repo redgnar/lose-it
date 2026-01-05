@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Ux\Http\Recipe\Tailor;
-
-use App\Ux\Http\Recipe\RecipeVersionMinimalDto;
+namespace App\Application\Dto;
 
 final readonly class TailorResultDto
 {

@@ -35,7 +35,7 @@ final class BasicArchitectureTest
             ->canOnlyDependOn()
             ->classes(
                 Selector::inNamespace('App\Infrastructure'),
-                Selector::inNamespace('App\Domain\Enum'),
+                Selector::inNamespace('App\Domain'),
                 Selector::classname('/^App\\\Application\\\(Storage|Notifier|Contract)\\\(Command|Query|Service|).+Interface$/', true),
                 Selector::classname('/^App\\\Application\\\Exception\\\.+(Exception|Interface)$/', true),
                 Selector::classname('/^App\\\Application\\\Bus\\\Command\\\.+Interface$/', true),
@@ -56,8 +56,12 @@ final class BasicArchitectureTest
                 Selector::inNamespace('Webmozart\Assert'),
                 Selector::inNamespace('Doctrine'),
                 Selector::inNamespace('Symfony'),
+                Selector::inNamespace('Symfony\Contracts\HttpClient'),
                 Selector::classname('DateTimeImmutable'),
                 Selector::classname('DateTimeInterface'),
+                Selector::classname('Exception'),
+                Selector::classname('RuntimeException'),
+                Selector::classname('Throwable'),
             );
     }
 
@@ -92,6 +96,24 @@ final class BasicArchitectureTest
                 Selector::inNamespace('Webmozart\Assert'),
                 Selector::inNamespace('OpenApi\Attributes'),
                 Selector::inNamespace('Nelmio\ApiDocBundle\Attribute'),
+            );
+    }
+
+    public function testDependencyLayer_Domain(): Rule
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('App\Domain'))
+            ->canOnlyDependOn()
+            ->classes(
+                Selector::inNamespace('App\Domain'),
+                Selector::inNamespace('Symfony\Component\Uid'),
+                Selector::classname('Webmozart\Assert\Assert'),
+                Selector::classname('Traversable'),
+                Selector::classname('Countable'),
+                Selector::classname('IteratorAggregate'),
+                Selector::classname('DateTimeImmutable'),
+                Selector::classname('DateTimeInterface'),
+                Selector::classname('BackedEnum'),
             );
     }
 }

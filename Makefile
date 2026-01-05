@@ -101,7 +101,7 @@ cp:
 	$(DOCKER_EXEC) composer $(c)
 
 doc:
-	$(DOCKER_EXEC) php bin/console nelmio:apidoc:dump
+	$(DOCKER_EXEC) sh -c "php bin/console nelmio:apidoc:dump --format=json > ./doc/open-api-schema.json"
 
 # Additional Shortcuts
 dc:
