@@ -6,16 +6,14 @@ namespace App\Ux\Http\Recipe\Tailor;
 
 use App\Application\Command\TailorRecipe\TailorRecipeCommand;
 use App\Application\Command\TailorRecipe\TailorRecipeCommandHandler;
-use App\Application\Exception\ParseGateException;
-use App\Application\Exception\QuotaExceededException;
-use App\Infrastructure\Doctrine\Entity\Recipe;
+use App\Application\Contract\FindRecipeServiceInterface;
+use App\Application\Dto\RecipeDto;
+use App\Application\Exception\RecipeNotFoundException;
 use App\Ux\Http\Recipe\Tailor\Dto\TailorResultResponseDto;
-use Doctrine\ORM\EntityManagerInterface;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -67,37 +65,27 @@ final class TailorRecipeController extends AbstractController
         string $id,
         #[MapRequestPayload] TailorRecipeCommandDto $dto,
         TailorRecipeCommandHandler $handler,
-        EntityManagerInterface $entityManager,
+        FindRecipeServiceInterface $findRecipeService,
     ): JsonResponse {
-        try {
-            $recipe = $entityManager->find(Recipe::class, $id);
-            if (!$recipe instanceof Recipe) {
-                return new JsonResponse(['error' => 'Recipe not found.'], Response::HTTP_NOT_FOUND);
-            }
-
-            $result = $handler(new TailorRecipeCommand(
-                $id,
-                $recipe->getUser()->getId()->toString(),
-                \App\Domain\Enum\Servings::from($dto->target_servings),
-                \App\Domain\Enum\Aggressiveness::from($dto->aggressiveness),
-                $dto->keep_similar,
-                \App\Domain\Enum\SaveStrategy::from($dto->save_strategy)
-            ));
-
-            return new JsonResponse(TailorResultResponseDto::fromApplicationDto($result));
-        } catch (ParseGateException $e) {
-            return new JsonResponse([
-                'error' => $e->getMessage(),
-                'details' => $e->getDetails(),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        } catch (QuotaExceededException $e) {
-            return new JsonResponse([
-                'error' => $e->getMessage(),
-            ], Response::HTTP_TOO_MANY_REQUESTS);
-        } catch (\InvalidArgumentException|\RuntimeException $e) {
-            return new JsonResponse([
-                'error' => $e->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
+        $recipe = $findRecipeService->find($id);
+        if (!$recipe instanceof RecipeDto) {
+            throw new RecipeNotFoundException('Recipe not found.');
         }
+
+        $result = $handler($this->createTailorRecipeCommand($recipe, $dto));
+
+        return new JsonResponse(TailorResultResponseDto::fromApplicationDto($result));
+    }
+
+    private function createTailorRecipeCommand(RecipeDto $recipe, TailorRecipeCommandDto $dto): TailorRecipeCommand
+    {
+        return new TailorRecipeCommand(
+            $recipe->id,
+            $recipe->userId,
+            \App\Domain\Enum\Servings::from($dto->target_servings),
+            \App\Domain\Enum\Aggressiveness::from($dto->aggressiveness),
+            $dto->keep_similar,
+            \App\Domain\Enum\SaveStrategy::from($dto->save_strategy)
+        );
     }
 }

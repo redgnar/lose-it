@@ -144,6 +144,71 @@ final class RecipeTailorTest extends WebTestCase
         $this->assertStringContainsString('Minimum 80% required', $data['error']);
     }
 
+    public function testTailorRecipeNotFound(): void
+    {
+        $client = static::createClient();
+
+        // GIVEN
+        $nonExistentId = Uuid::v7()->toString();
+        $payload = [
+            'target_servings' => 2,
+            'aggressiveness' => 'medium',
+            'keep_similar' => true,
+            'save_strategy' => 'new_version',
+        ];
+
+        // WHEN
+        $client->request('POST', sprintf('/api/recipes/%s/tailor', $nonExistentId), [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], (string) json_encode($payload));
+
+        // THEN
+        $this->assertResponseStatusCodeSame(404);
+        $responseContent = $client->getResponse()->getContent();
+        $this->assertIsString($responseContent);
+        $this->assertJsonStringEqualsJsonString((string) json_encode(['error' => 'Recipe not found.']), $responseContent);
+    }
+
+    public function testTailorRecipeQuotaExceeded(): void
+    {
+        $client = static::createClient();
+        $container = $client->getContainer();
+        /** @var \Doctrine\ORM\EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+
+        // GIVEN
+        $email = 'test-quota'.uniqid().'@example.com';
+        $user = new User(Uuid::v7(), $email, 'google-id-'.uniqid());
+        $entityManager->persist($user);
+
+        $quota = new \App\Infrastructure\Doctrine\Entity\TailoringQuota($user);
+        $quota->setWeeklyAttemptsCount(5); // Max is 5
+        $entityManager->persist($quota);
+
+        $recipe = new Recipe(Uuid::v7(), $user, 'Pasta', 4);
+        $entityManager->persist($recipe);
+
+        $entityManager->flush();
+
+        $payload = [
+            'target_servings' => 2,
+            'aggressiveness' => 'medium',
+            'keep_similar' => true,
+            'save_strategy' => 'new_version',
+        ];
+
+        // WHEN
+        $client->request('POST', sprintf('/api/recipes/%s/tailor', $recipe->getId()->toString()), [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], (string) json_encode($payload));
+
+        // THEN
+        $this->assertResponseStatusCodeSame(429);
+        $responseContent = $client->getResponse()->getContent();
+        $this->assertIsString($responseContent);
+        $this->assertJsonStringEqualsJsonString((string) json_encode(['error' => 'Weekly tailoring quota exceeded.']), $responseContent);
+    }
+
     /**
      * @param array<string, mixed> $payload
      */
