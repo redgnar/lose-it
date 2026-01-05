@@ -9,7 +9,9 @@ RUN apk add --no-cache \
     mariadb-client \
     make \
     zlib-dev \
-    linux-headers
+    linux-headers \
+    autoconf \
+    g++
 
 # Install PHP extensions
 RUN docker-php-ext-install \
@@ -17,6 +19,10 @@ RUN docker-php-ext-install \
     pdo_mysql \
     zip \
     opcache
+
+RUN pecl install xdebug && docker-php-ext-enable xdebug
+
+COPY docker/xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

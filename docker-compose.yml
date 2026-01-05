@@ -7,11 +7,16 @@ services:
       - .:/var/www/html
     environment:
       DATABASE_URL: mysql://root:root@db:3306/app?serverVersion=mariadb-10.11.2
+      XDEBUG_CONFIG: "client_port=9003 client_host=host.docker.internal log_level=0"
+      XDEBUG_MODE: "debug"
+      XDEBUG_SESSION: "loseit"
     depends_on:
       db:
         condition: service_healthy
     networks:
-      lose-it:
+      - lose-it
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   db:
     image: mariadb:10.11

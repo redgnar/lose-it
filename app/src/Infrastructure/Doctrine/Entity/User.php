@@ -9,12 +9,13 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
 #[ORM\Index(columns: ['email'], name: 'idx_users_email')]
-class User
+class User implements UserInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: 'uuid', unique: true)]
@@ -127,5 +128,25 @@ class User
     public function getAvoidList(): Collection
     {
         return $this->avoidList;
+    }
+
+    public function getRoles(): array
+    {
+        return ['ROLE_USER'];
+    }
+
+    public function eraseCredentials(): void
+    {
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    public function getUserIdentifier(): string
+    {
+        /** @var non-empty-string $email */
+        $email = $this->email;
+
+        return $email;
     }
 }

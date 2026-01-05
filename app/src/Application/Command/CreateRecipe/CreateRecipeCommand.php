@@ -13,6 +13,7 @@ final readonly class CreateRecipeCommand
         public string $rawIngredients,
         public string $rawSteps,
         public Servings $servings,
+        public string $userId,
     ) {
     }
 }
