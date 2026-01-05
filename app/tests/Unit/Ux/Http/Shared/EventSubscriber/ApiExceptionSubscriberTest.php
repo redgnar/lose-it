@@ -42,7 +42,7 @@ final class ApiExceptionSubscriberTest extends TestCase
     {
         // GIVEN
         $exception = new BadRequestHttpException('Bad request message');
-        $event = $this->createExceptionEvent($exception);
+        $event = $this->createExceptionEvent($exception, '/api/test');
 
         // WHEN
         $this->subscriber->onKernelException($event);
@@ -58,7 +58,7 @@ final class ApiExceptionSubscriberTest extends TestCase
     {
         // GIVEN
         $exception = new ParseGateException('Parse error', ['missing' => 'ingredients']);
-        $event = $this->createExceptionEvent($exception);
+        $event = $this->createExceptionEvent($exception, '/api/test');
 
         // WHEN
         $this->subscriber->onKernelException($event);
@@ -77,7 +77,7 @@ final class ApiExceptionSubscriberTest extends TestCase
     {
         // GIVEN
         $exception = new QuotaExceededException('Quota exceeded message');
-        $event = $this->createExceptionEvent($exception);
+        $event = $this->createExceptionEvent($exception, '/api/test');
 
         // WHEN
         $this->subscriber->onKernelException($event);
@@ -93,7 +93,7 @@ final class ApiExceptionSubscriberTest extends TestCase
     {
         // GIVEN
         $exception = new RecipeNotFoundException('Recipe not found');
-        $event = $this->createExceptionEvent($exception);
+        $event = $this->createExceptionEvent($exception, '/api/test');
 
         // WHEN
         $this->subscriber->onKernelException($event);
@@ -109,7 +109,7 @@ final class ApiExceptionSubscriberTest extends TestCase
     {
         // GIVEN
         $exception = new \InvalidArgumentException('Invalid argument');
-        $event = $this->createExceptionEvent($exception);
+        $event = $this->createExceptionEvent($exception, '/api/test');
 
         // WHEN
         $this->subscriber->onKernelException($event);
@@ -125,7 +125,7 @@ final class ApiExceptionSubscriberTest extends TestCase
     {
         // GIVEN
         $exception = new \RuntimeException('Runtime error');
-        $event = $this->createExceptionEvent($exception);
+        $event = $this->createExceptionEvent($exception, '/api/test');
 
         // WHEN
         $this->subscriber->onKernelException($event);
@@ -141,7 +141,7 @@ final class ApiExceptionSubscriberTest extends TestCase
     {
         // GIVEN
         $exception = new \Exception('General error');
-        $event = $this->createExceptionEvent($exception);
+        $event = $this->createExceptionEvent($exception, '/api/test');
 
         // WHEN
         $this->subscriber->onKernelException($event);
@@ -150,11 +150,24 @@ final class ApiExceptionSubscriberTest extends TestCase
         $this->assertNull($event->getResponse());
     }
 
-    private function createExceptionEvent(\Throwable $exception): ExceptionEvent
+    public function testDoesNotHandleExceptionsForNonApiPaths(): void
+    {
+        // GIVEN
+        $exception = new RecipeNotFoundException('Recipe not found');
+        $event = $this->createExceptionEvent($exception, '/some-other-path');
+
+        // WHEN
+        $this->subscriber->onKernelException($event);
+
+        // THEN
+        $this->assertNull($event->getResponse());
+    }
+
+    private function createExceptionEvent(\Throwable $exception, string $path = '/api/test'): ExceptionEvent
     {
         return new ExceptionEvent(
             $this->createStub(HttpKernelInterface::class),
-            new Request(),
+            Request::create($path),
             HttpKernelInterface::MAIN_REQUEST,
             $exception
         );
