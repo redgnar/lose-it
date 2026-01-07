@@ -58,6 +58,20 @@ final class CreateRecipeTest extends WebTestCase
         $this->assertFalse($data['is_favorite']);
         $this->assertNotEmpty($data['id']);
         $this->assertNotEmpty($data['version_id']);
+
+        // Verify Database
+        $entityManager->clear(); // Clear identity map to force reload from DB
+        /** @var \App\Infrastructure\Doctrine\Entity\Recipe|null $recipe */
+        $recipe = $entityManager->getRepository(\App\Infrastructure\Doctrine\Entity\Recipe::class)->find(Uuid::fromString($data['id']));
+        $this->assertNotNull($recipe);
+        $this->assertEquals('Spaghetti Carbonara', $recipe->getTitle());
+
+        $activeVersion = $recipe->getActiveVersion();
+        $this->assertNotNull($activeVersion);
+        $this->assertCount(3, $activeVersion->getIngredients());
+        $ingredient = $activeVersion->getIngredients()->first();
+        $this->assertInstanceOf(\App\Infrastructure\Doctrine\Entity\RecipeIngredient::class, $ingredient);
+        $this->assertEquals('200g Pasta', $ingredient->getOriginalText());
     }
 
     public function testCreateRecipeValidationFailure(): void
@@ -74,20 +88,72 @@ final class CreateRecipeTest extends WebTestCase
 
         $client->loginUser($user);
 
-        $payload = [
-            'title' => '', // Invalid
-            'raw_ingredients' => 'Pasta',
-            'raw_steps' => 'Cook',
-            'servings' => 2,
+        $testCases = [
+            'empty_title' => [
+                'payload' => [
+                    'title' => '',
+                    'raw_ingredients' => 'Pasta',
+                    'raw_steps' => 'Cook',
+                    'servings' => 2,
+                ],
+                'expected_violation' => 'title',
+            ],
+            'empty_ingredients' => [
+                'payload' => [
+                    'title' => 'Spaghetti',
+                    'raw_ingredients' => '',
+                    'raw_steps' => 'Cook',
+                    'servings' => 2,
+                ],
+                'expected_violation' => 'raw_ingredients',
+            ],
+            'empty_steps' => [
+                'payload' => [
+                    'title' => 'Spaghetti',
+                    'raw_ingredients' => 'Pasta',
+                    'raw_steps' => '',
+                    'servings' => 2,
+                ],
+                'expected_violation' => 'raw_steps',
+            ],
+            'invalid_servings' => [
+                'payload' => [
+                    'title' => 'Spaghetti',
+                    'raw_ingredients' => 'Pasta',
+                    'raw_steps' => 'Cook',
+                    'servings' => 99,
+                ],
+                'expected_status' => 422,
+            ],
+            'too_long_ingredients' => [
+                'payload' => [
+                    'title' => 'Spaghetti',
+                    'raw_ingredients' => str_repeat('a', 10001),
+                    'raw_steps' => 'Cook',
+                    'servings' => 2,
+                ],
+                'expected_status' => 422,
+            ],
+            'too_long_steps' => [
+                'payload' => [
+                    'title' => 'Spaghetti',
+                    'raw_ingredients' => 'Pasta',
+                    'raw_steps' => str_repeat('a', 10001),
+                    'servings' => 2,
+                ],
+                'expected_status' => 422,
+            ],
         ];
 
-        // WHEN
-        $client->request('POST', '/api/recipes', [], [], [
-            'CONTENT_TYPE' => 'application/json',
-        ], (string) json_encode($payload));
+        foreach ($testCases as $name => $case) {
+            // WHEN
+            $client->request('POST', '/api/recipes', [], [], [
+                'CONTENT_TYPE' => 'application/json',
+            ], (string) json_encode($case['payload']));
 
-        // THEN
-        $this->assertResponseStatusCodeSame(422); // MapRequestPayload returns 422 by default for validation errors
+            // THEN
+            $this->assertResponseStatusCodeSame($case['expected_status'] ?? 422, "Test case $name failed");
+        }
     }
 
     public function testCreateRecipeUnauthorized(): void

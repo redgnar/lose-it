@@ -179,4 +179,11 @@ class RecipeVersion
     {
         return $this->ingredients;
     }
+
+    public function addIngredient(RecipeIngredient $ingredient): void
+    {
+        if (!$this->ingredients->contains($ingredient)) {
+            $this->ingredients->add($ingredient);
+        }
+    }
 }

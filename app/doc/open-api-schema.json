@@ -6,6 +6,47 @@
         "version": "1.0.0"
     },
     "paths": {
+        "/api/recipes": {
+            "post": {
+                "tags": [
+                    "Recipe"
+                ],
+                "summary": "Create a recipe",
+                "description": "Create a new recipe.",
+                "operationId": "post_api_recipe_create",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateRecipeCommandDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Recipe created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RecipeResponseDto"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                }
+            }
+        },
         "/api/recipes/{id}/tailor": {
             "post": {
                 "tags": [
@@ -42,7 +83,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/TailorResultDto"
+                                    "$ref": "#/components/schemas/TailorResultResponseDto"
                                 }
                             }
                         }
@@ -65,6 +106,55 @@
     },
     "components": {
         "schemas": {
+            "CreateRecipeCommandDto": {
+                "required": [
+                    "title",
+                    "raw_ingredients",
+                    "raw_steps",
+                    "servings"
+                ],
+                "properties": {
+                    "title": {
+                        "description": "Title of the recipe",
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1,
+                        "example": "Spaghetti Carbonara"
+                    },
+                    "raw_ingredients": {
+                        "description": "Raw text containing ingredients, one per line",
+                        "type": "string",
+                        "maxLength": 10000,
+                        "example": "200g Pasta\n2 Eggs"
+                    },
+                    "raw_steps": {
+                        "description": "Raw text containing cooking steps, one per line",
+                        "type": "string",
+                        "maxLength": 10000,
+                        "example": "1. Boil water\n2. Cook pasta"
+                    },
+                    "servings": {
+                        "description": "Number of servings",
+                        "type": "integer",
+                        "enum": [
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6,
+                            7,
+                            8,
+                            9,
+                            10,
+                            11,
+                            12
+                        ],
+                        "example": 2
+                    }
+                },
+                "type": "object"
+            },
             "TailorRecipeCommandDto": {
                 "required": [
                     "target_servings",
@@ -119,10 +209,10 @@
                 },
                 "type": "object"
             },
-            "RecipeIngredientDto": {
+            "RecipeIngredientResponseDto": {
                 "required": [
-                    "originalText",
-                    "isParsed"
+                    "original_text",
+                    "is_parsed"
                 ],
                 "properties": {
                     "id": {
@@ -132,7 +222,7 @@
                         "example": "018f3b4a-1234-7890-abcd-1234567890ab",
                         "nullable": true
                     },
-                    "originalText": {
+                    "original_text": {
                         "description": "Original text of the ingredient",
                         "type": "string",
                         "example": "200g of chicken breast"
@@ -155,7 +245,7 @@
                         "example": "chicken breast",
                         "nullable": true
                     },
-                    "isParsed": {
+                    "is_parsed": {
                         "description": "Whether the ingredient was successfully parsed",
                         "type": "boolean",
                         "example": true
@@ -163,7 +253,80 @@
                 },
                 "type": "object"
             },
-            "RecipeVersionMinimalDto": {
+            "RecipeResponseDto": {
+                "required": [
+                    "id",
+                    "title",
+                    "is_favorite",
+                    "version_id",
+                    "servings",
+                    "ingredients",
+                    "steps"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "ID of the recipe",
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "018f3b4a-1234-7890-abcd-1234567890ab"
+                    },
+                    "title": {
+                        "description": "Title of the recipe",
+                        "type": "string",
+                        "example": "Spaghetti Carbonara"
+                    },
+                    "is_favorite": {
+                        "description": "Whether the recipe is a favorite",
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "version_id": {
+                        "description": "ID of the active version",
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "018f3b4a-1234-7890-abcd-1234567890ab"
+                    },
+                    "servings": {
+                        "description": "Number of servings",
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "ingredients": {
+                        "description": "List of ingredients",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RecipeIngredientResponseDto"
+                        }
+                    },
+                    "steps": {
+                        "description": "List of cooking steps",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "total_calories": {
+                        "description": "Total calories for the recipe",
+                        "type": "integer",
+                        "example": 1200,
+                        "nullable": true
+                    },
+                    "calories_per_serving": {
+                        "description": "Calories per serving",
+                        "type": "integer",
+                        "example": 300,
+                        "nullable": true
+                    },
+                    "calorie_confidence": {
+                        "description": "Confidence level of the calorie calculation",
+                        "type": "string",
+                        "example": "high",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "RecipeVersionResponseDto": {
                 "required": [
                     "id",
                     "servings",
@@ -185,13 +348,13 @@
                         "description": "List of ingredients",
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/RecipeIngredientDto"
+                            "$ref": "#/components/schemas/RecipeIngredientResponseDto"
                         }
                     }
                 },
                 "type": "object"
             },
-            "TailorResultDto": {
+            "TailorResultResponseDto": {
                 "required": [
                     "scaledVersion",
                     "finalVersion",
@@ -199,10 +362,10 @@
                 ],
                 "properties": {
                     "scaledVersion": {
-                        "$ref": "#/components/schemas/RecipeVersionMinimalDto"
+                        "$ref": "#/components/schemas/RecipeVersionResponseDto"
                     },
                     "finalVersion": {
-                        "$ref": "#/components/schemas/RecipeVersionMinimalDto"
+                        "$ref": "#/components/schemas/RecipeVersionResponseDto"
                     },
                     "status": {
                         "description": "Status of the tailoring process",

@@ -186,4 +186,11 @@ class Recipe
     {
         return $this->versions;
     }
+
+    public function addVersion(RecipeVersion $version): void
+    {
+        if (!$this->versions->contains($version)) {
+            $this->versions->add($version);
+        }
+    }
 }

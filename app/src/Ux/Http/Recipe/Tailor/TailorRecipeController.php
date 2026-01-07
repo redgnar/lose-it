@@ -9,13 +9,16 @@ use App\Application\Command\TailorRecipe\TailorRecipeCommandHandler;
 use App\Application\Contract\FindRecipeServiceInterface;
 use App\Application\Dto\RecipeDto;
 use App\Application\Exception\RecipeNotFoundException;
+use App\Infrastructure\Doctrine\Entity\User;
 use App\Ux\Http\Recipe\Tailor\Dto\TailorResultResponseDto;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 final class TailorRecipeController extends AbstractController
 {
@@ -64,9 +67,13 @@ final class TailorRecipeController extends AbstractController
     public function __invoke(
         string $id,
         #[MapRequestPayload] TailorRecipeCommandDto $dto,
+        #[CurrentUser] ?User $user,
         TailorRecipeCommandHandler $handler,
         FindRecipeServiceInterface $findRecipeService,
     ): JsonResponse {
+        if (!$user instanceof User) {
+            return new JsonResponse(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+        }
         $recipe = $findRecipeService->find($id);
         if (!$recipe instanceof RecipeDto) {
             throw new RecipeNotFoundException('Recipe not found.');

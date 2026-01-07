@@ -7,7 +7,7 @@ namespace App\Ux\Http\Recipe\Tailor\Dto;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Serializer\Attribute\SerializedName;
 
-final readonly class RecipeIngredientResponseDto
+final readonly class RecipeIngredientResponseDto implements \JsonSerializable
 {
     public function __construct(
         #[OA\Property(description: 'ID of the ingredient', type: 'string', format: 'uuid', example: '018f3b4a-1234-7890-abcd-1234567890ab', nullable: true)]
@@ -25,6 +25,21 @@ final readonly class RecipeIngredientResponseDto
         #[SerializedName('is_parsed')]
         public bool $isParsed,
     ) {
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'id' => $this->id,
+            'original_text' => $this->originalText,
+            'quantity' => $this->quantity,
+            'unit' => $this->unit,
+            'item' => $this->item,
+            'is_parsed' => $this->isParsed,
+        ];
     }
 
     public static function fromApplicationDto(\App\Application\Dto\RecipeIngredientDto $dto): self

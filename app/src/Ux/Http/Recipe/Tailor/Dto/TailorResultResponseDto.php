@@ -7,7 +7,7 @@ namespace App\Ux\Http\Recipe\Tailor\Dto;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 
-final readonly class TailorResultResponseDto
+final readonly class TailorResultResponseDto implements \JsonSerializable
 {
     public function __construct(
         #[OA\Property(ref: new Model(type: RecipeVersionResponseDto::class))]
@@ -19,6 +19,19 @@ final readonly class TailorResultResponseDto
         #[OA\Property(description: 'Optional message from the tailoring process', type: 'string', example: 'Recipe tailored successfully', nullable: true)]
         public ?string $message = null,
     ) {
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'scaled_version' => $this->scaledVersion,
+            'final_version' => $this->finalVersion,
+            'status' => $this->status,
+            'message' => $this->message,
+        ];
     }
 
     public static function fromApplicationDto(\App\Application\Dto\TailorResultDto $dto): self

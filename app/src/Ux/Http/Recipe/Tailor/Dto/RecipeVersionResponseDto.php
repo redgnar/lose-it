@@ -7,7 +7,7 @@ namespace App\Ux\Http\Recipe\Tailor\Dto;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 
-final readonly class RecipeVersionResponseDto
+final readonly class RecipeVersionResponseDto implements \JsonSerializable
 {
     /**
      * @param RecipeIngredientResponseDto[] $ingredients
@@ -24,6 +24,18 @@ final readonly class RecipeVersionResponseDto
         )]
         public array $ingredients,
     ) {
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'id' => $this->id,
+            'servings' => $this->servings,
+            'ingredients' => $this->ingredients,
+        ];
     }
 
     public static function fromApplicationDto(\App\Application\Dto\RecipeVersionMinimalDto $dto): self

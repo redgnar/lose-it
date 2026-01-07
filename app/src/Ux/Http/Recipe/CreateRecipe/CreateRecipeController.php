@@ -42,6 +42,10 @@ final class CreateRecipeController extends AbstractController
                 response: 401,
                 description: 'Unauthorized'
             ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation failed'
+            ),
         ]
     )]
     public function __invoke(
@@ -53,15 +57,22 @@ final class CreateRecipeController extends AbstractController
             return new JsonResponse(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
-        $command = new CreateRecipeCommand(
-            $dto->title,
-            $dto->rawIngredients,
-            $dto->rawSteps,
-            $dto->servings,
-            $user->getId()->toString()
-        );
+        try {
+            $command = new CreateRecipeCommand(
+                $dto->title,
+                $dto->rawIngredients,
+                $dto->rawSteps,
+                \App\Domain\Enum\Servings::from($dto->servings),
+                $user->getId()->toString()
+            );
 
-        $result = $handler($command);
+            $result = $handler($command);
+        } catch (\InvalidArgumentException $e) {
+            return new JsonResponse([
+                'error' => 'Validation failed',
+                'message' => $e->getMessage(),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         return new JsonResponse(RecipeResponseDto::fromApplicationDto($result), Response::HTTP_CREATED);
     }

@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Api;
+namespace App\Tests\Api\Recipe;
 
 use App\Application\Contract\AiReductionServiceInterface;
 use App\Infrastructure\Doctrine\Entity\Recipe;
 use App\Infrastructure\Doctrine\Entity\RecipeIngredient;
 use App\Infrastructure\Doctrine\Entity\RecipeVersion;
 use App\Infrastructure\Doctrine\Entity\User;
+use App\Tests\Api\OpenApiValidationTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Uid\Uuid;
@@ -31,6 +32,8 @@ final class RecipeTailorTest extends WebTestCase
 
         $recipe = new Recipe(Uuid::v7(), $user, 'Pasta', 4);
         $entityManager->persist($recipe);
+
+        $client->loginUser($user);
 
         $version = new RecipeVersion(Uuid::v7(), $recipe, 4, 'original');
         $version->setSteps(['Cook pasta']);
@@ -80,13 +83,13 @@ final class RecipeTailorTest extends WebTestCase
         $responseContent = $client->getResponse()->getContent();
         $this->assertIsString($responseContent);
 
-        /** @var array{status: string, scaledVersion: array{servings: int}, finalVersion: array{servings: int, ingredients: array<int, array{originalText: string}>}} $data */
+        /** @var array{status: string, scaled_version: array{servings: int}, final_version: array{servings: int, ingredients: array<int, array{original_text: string}>}} $data */
         $data = json_decode($responseContent, true);
 
         $this->assertEquals('success', $data['status']);
-        $this->assertEquals(2, $data['scaledVersion']['servings']);
-        $this->assertEquals(2, $data['finalVersion']['servings']);
-        $this->assertEquals('200g Whole Wheat Pasta', $data['finalVersion']['ingredients'][0]['originalText']);
+        $this->assertEquals(2, $data['scaled_version']['servings']);
+        $this->assertEquals(2, $data['final_version']['servings']);
+        $this->assertEquals('200g Whole Wheat Pasta', $data['final_version']['ingredients'][0]['original_text']);
     }
 
     public function testTailorRecipeParseGateFailure(): void
@@ -102,6 +105,8 @@ final class RecipeTailorTest extends WebTestCase
 
         $recipe = new Recipe(Uuid::v7(), $user, 'Pasta Unparsed', 4);
         $entityManager->persist($recipe);
+
+        $client->loginUser($user);
 
         $version = new RecipeVersion(Uuid::v7(), $recipe, 4, 'original');
         $entityManager->persist($version);
@@ -181,6 +186,8 @@ final class RecipeTailorTest extends WebTestCase
         $user = new User(Uuid::v7(), $email, 'google-id-'.uniqid());
         $entityManager->persist($user);
 
+        $client->loginUser($user);
+
         $quota = new \App\Infrastructure\Doctrine\Entity\TailoringQuota($user);
         $quota->setWeeklyAttemptsCount(5); // Max is 5
         $entityManager->persist($quota);
@@ -224,6 +231,8 @@ final class RecipeTailorTest extends WebTestCase
         $email = 'test'.uniqid().'@example.com';
         $user = new User(Uuid::v7(), $email, 'google-id-'.uniqid());
         $entityManager->persist($user);
+
+        $client->loginUser($user);
 
         $recipe = new Recipe(Uuid::v7(), $user, 'Validation Test', 4);
         $entityManager->persist($recipe);

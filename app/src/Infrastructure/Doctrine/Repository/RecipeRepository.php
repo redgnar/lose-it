@@ -52,6 +52,7 @@ class RecipeRepository extends ServiceEntityRepository implements RecipeReposito
             $servings->value,
             'original'
         );
+        $recipe->addVersion($version);
 
         // Parse ingredients
         $rawIngredientsArray = explode("\n", $rawIngredients);
@@ -63,6 +64,7 @@ class RecipeRepository extends ServiceEntityRepository implements RecipeReposito
                 continue;
             }
             $ingredient = new RecipeIngredient($version, $rawIngredient);
+            $version->addIngredient($ingredient);
             $entityManager->persist($ingredient);
             $ingredients[] = $ingredient;
 
